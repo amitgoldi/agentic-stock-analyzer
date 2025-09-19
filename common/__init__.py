@@ -1,1 +1,1 @@
-"""Common utilities and models for the agentic stock analyzer."""
+"""Common utilities and models for the tikal lecture series."""

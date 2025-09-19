@@ -1,0 +1,7 @@
+[tool.logfire]
+project_name = "starter-project"
+service_name = "tikal-lecture-demo"
+
+[tokens."https://logfire-eu.pydantic.dev"]
+token = "pylf_v1_eu_hB2FYYscv55PBY3B3DsX0VVmj91HMCKCkGW895mPWgxW"
+expiration = "2026-09-19T03:18:35.210143Z"

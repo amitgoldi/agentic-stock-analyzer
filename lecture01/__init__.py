@@ -1,1 +1,1 @@
-"""Lecture 01: Single Agent ReACT Pattern Implementation."""
+"""Lecture 01: Single Agent with Web Search Tool."""

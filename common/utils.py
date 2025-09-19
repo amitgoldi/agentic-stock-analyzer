@@ -1,74 +1,73 @@
-"""Utility functions and tools for stock analysis."""
+"""Common utility functions."""
 
 import logging
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List
 
-from tavily import TavilyClient
-
-from .config import TavilyConfig
-from .models import CompanyInfo, FinancialMetrics, NewsItem
-
-logger = logging.getLogger(__name__)
+from .config import config
 
 
-class StockAnalysisError(Exception):
-    """Base exception for stock analysis errors."""
-    pass
-
-
-class InsufficientDataError(StockAnalysisError):
-    """Raised when insufficient data is available for analysis."""
-    pass
-
-
-class APIError(StockAnalysisError):
-    """Raised when external API calls fail."""
-    pass
-
-
-class TavilyResearchTool:
-    """Generic web search tool using Tavily API."""
+def setup_logging() -> None:
+    """Set up logging configuration."""
+    log_level = getattr(logging, config.LOG_LEVEL.upper(), logging.INFO)
     
-    def __init__(self, config: TavilyConfig):
-        """Initialize the Tavily research tool.
-        
-        Args:
-            config: Tavily configuration containing API key and settings
-        """
-        self.config = config
-        self.client = TavilyClient(api_key=config.api_key)
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
     
-    async def search(self, query: str) -> List[dict]:
-        """Perform a web search using Tavily.
+    # Set specific loggers to appropriate levels
+    if not config.DEBUG:
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("httpcore").setLevel(logging.WARNING)
+
+
+def get_current_date() -> str:
+    """Get current date in YYYY-MM-DD format."""
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def format_search_results(results: List[Dict[str, Any]]) -> str:
+    """Format search results for display."""
+    if not results:
+        return "No search results found."
+    
+    formatted = []
+    for i, result in enumerate(results, 1):
+        title = result.get("title", "No title")
+        url = result.get("url", "No URL")
+        content = result.get("content", "No content")
         
-        Args:
-            query: Search query string
-            
-        Returns:
-            List of search result dictionaries with keys: title, url, content
-            
-        Raises:
-            APIError: If the Tavily API call fails
-        """
-        try:
-            logger.info(f"Performing web search: {query}")
-            
-            response = self.client.search(
-                query=query,
-                search_depth=self.config.search_depth,
-                max_results=self.config.max_results
-            )
-            
-            if not response or not response.get("results"):
-                logger.warning(f"No search results found for query: {query}")
-                return []
-            
-            results = response["results"]
-            logger.info(f"Found {len(results)} search results for query: {query}")
-            
-            return results
-            
-        except Exception as e:
-            logger.error(f"Error performing web search for query '{query}': {str(e)}")
-            raise APIError(f"Failed to perform web search: {str(e)}")
+        formatted.append(f"{i}. **{title}**\n   URL: {url}\n   Content: {content[:200]}...")
+    
+    return "\n\n".join(formatted)
+
+
+def validate_stock_symbol(symbol: str) -> str:
+    """Validate and normalize stock symbol."""
+    if not symbol:
+        raise ValueError("Stock symbol cannot be empty")
+    
+    # Convert to uppercase and remove whitespace
+    normalized = symbol.strip().upper()
+    
+    # Basic validation - should be 1-5 characters, alphanumeric
+    if not normalized.isalnum() or len(normalized) > 5:
+        raise ValueError(f"Invalid stock symbol format: {symbol}")
+    
+    return normalized
+
+
+def print_section_header(title: str) -> None:
+    """Print a formatted section header."""
+    print(f"\n{'='*60}")
+    print(f" {title}")
+    print(f"{'='*60}")
+
+
+def print_subsection_header(title: str) -> None:
+    """Print a formatted subsection header."""
+    print(f"\n{'-'*40}")
+    print(f" {title}")
+    print(f"{'-'*40}")

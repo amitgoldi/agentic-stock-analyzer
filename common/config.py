@@ -1,74 +1,56 @@
-"""Configuration management for the agentic stock analyzer."""
+"""Configuration management for the application."""
 
 import os
 from typing import Optional
-
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
 
 # Load environment variables from .env file
 load_dotenv()
 
 
-class TavilyConfig(BaseModel):
-    """Configuration for Tavily API integration."""
-
-    api_key: str = Field(..., description="Tavily API key")
-    max_results: int = Field(default=10, description="Maximum search results to return")
-    search_depth: str = Field(default="advanced", description="Search depth level")
-
-
-class AgentConfig(BaseModel):
-    """Configuration for the AI agent."""
+class Config:
+    """Application configuration."""
     
-    model_config = {"protected_namespaces": ()}
-
-    model_name: str = Field(
-        default="gpt-4.1", description="Model to use for the agent"
-    )
-    temperature: float = Field(
-        default=0.1, ge=0.0, le=2.0, description="Model temperature"
-    )
-    max_retries: int = Field(default=3, ge=1, description="Maximum number of retries")
+    # Tavily API Configuration
+    TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
+    TAVILY_MAX_RESULTS: int = int(os.getenv("TAVILY_MAX_RESULTS", "10"))
+    TAVILY_SEARCH_DEPTH: str = os.getenv("TAVILY_SEARCH_DEPTH", "advanced")
     
-    # LiteLLM configuration
-    base_url: Optional[str] = Field(
-        default=None, description="Custom base URL for LiteLLM proxy"
-    )
-    api_key: Optional[str] = Field(
-        default=None, description="API key for LiteLLM proxy"
-    )
-
-
-class AppConfig(BaseModel):
-    """Main application configuration."""
-
-    tavily: TavilyConfig
-    agent: AgentConfig
-    debug: bool = Field(default=False, description="Enable debug mode")
-    log_level: str = Field(default="INFO", description="Logging level")
-
+    # LLM Configuration
+    AGENT_MODEL: str = os.getenv("AGENT_MODEL", "gpt-4.1_2025-04-14")
+    AGENT_TEMPERATURE: float = float(os.getenv("AGENT_TEMPERATURE", "0.1"))
+    AGENT_MAX_RETRIES: int = int(os.getenv("AGENT_MAX_RETRIES", "3"))
+    
+    # LiteLLM Configuration
+    LITELLM_BASE_URL: str = os.getenv("LITELLM_BASE_URL", "")
+    LITELLM_API_KEY: str = os.getenv("LITELLM_API_KEY", "")
+    
+    # Logfire Configuration
+    LOGFIRE_API_KEY: str = os.getenv("LOGFIRE_API_KEY", "")
+    LOGFIRE_PROJECT_ID: str = os.getenv("LOGFIRE_PROJECT_ID", "")
+    ENABLE_LOGFIRE: bool = os.getenv("ENABLE_LOGFIRE", "true").lower() == "true"
+    
+    # Application Configuration
+    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+    
     @classmethod
-    def from_env(cls) -> "AppConfig":
-        """Create configuration from environment variables."""
-        return cls(
-            tavily=TavilyConfig(
-                api_key=os.getenv("TAVILY_API_KEY", ""),
-                max_results=int(os.getenv("TAVILY_MAX_RESULTS", "10")),
-                search_depth=os.getenv("TAVILY_SEARCH_DEPTH", "advanced"),
-            ),
-            agent=AgentConfig(
-                model_name=os.getenv("AGENT_MODEL", "gpt-4.1"),
-                temperature=float(os.getenv("AGENT_TEMPERATURE", "0.1")),
-                max_retries=int(os.getenv("AGENT_MAX_RETRIES", "3")),
-                base_url=os.getenv("LITELLM_BASE_URL"),
-                api_key=os.getenv("LITELLM_API_KEY"),
-            ),
-            debug=os.getenv("DEBUG", "false").lower() == "true",
-            log_level=os.getenv("LOG_LEVEL", "INFO"),
-        )
+    def validate_required_keys(cls) -> None:
+        """Validate that all required configuration keys are present."""
+        required_keys = [
+            ("TAVILY_API_KEY", cls.TAVILY_API_KEY),
+        ]
+        
+        missing_keys = []
+        for key_name, key_value in required_keys:
+            if not key_value:
+                missing_keys.append(key_name)
+        
+        if missing_keys:
+            error_msg = f"Missing required environment variables: {', '.join(missing_keys)}\n"
+            error_msg += "Please copy .env.example to .env and configure your API keys."
+            raise ValueError(error_msg)
 
 
-def get_config() -> AppConfig:
-    """Get the application configuration."""
-    return AppConfig.from_env()
+# Global config instance
+config = Config()
