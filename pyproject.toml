@@ -10,17 +10,21 @@ requires-python = ">=3.9"
 dependencies = [
     "logfire[httpx]>=4.3.3",
     "pydantic-ai-slim[logfire,openai,tavily]>=0.0.49",
-    "python-dotenv>=1.0.0",
+    "pydantic-settings>=2.0.0",
 ]
 
 [project.scripts]
 lecture01 = "lecture01.main:main"
+lecture02 = "lecture02.main:main"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
-    "black>=23.0.0",
-    "isort>=5.0.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "ruff>=0.7.0",
+    "mypy>=1.13.0",
+    "pre-commit>=3.0.0",
+    "types-requests>=2.31.0",
 ]
 
 [build-system]
@@ -28,7 +32,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["common", "lecture01"]
+packages = ["common", "lecture01", "lecture02"]
 
 [tool.black]
 line-length = 88

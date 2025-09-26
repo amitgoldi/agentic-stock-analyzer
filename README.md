@@ -15,6 +15,10 @@ tikal-lecture-communication-patterns/
 │   ├── __init__.py
 │   ├── agent.py           # Single agent implementation
 │   └── main.py            # Main entry point for demo
+├── lecture02/             # Lecture 2: Agent Delegation
+│   ├── __init__.py
+│   ├── agent.py           # StockRecommender agent implementation
+│   └── main.py            # Main entry point for demo
 ├── .env.example           # Environment variables template
 ├── .env                   # Environment variables (create from .env.example, not in git)
 ├── pyproject.toml         # Project dependencies
@@ -23,18 +27,59 @@ tikal-lecture-communication-patterns/
 
 ## Setup
 
-1. **Install dependencies:**
+1. **Quick setup with make:**
    ```bash
-   uv sync
-   # or
-   pip install -e .
+   make setup
+   # This will install dependencies and set up pre-commit hooks
    ```
 
-2. **Configure environment variables:**
+2. **Manual setup (alternative):**
+   ```bash
+   # Install dependencies
+   uv sync --extra dev
+
+   # Set up pre-commit hooks
+   uv run pre-commit install
+   ```
+
+3. **Configure environment variables:**
    ```bash
    cp .env.example .env
    # Edit .env with your API keys
    ```
+
+## Development Workflow
+
+This project includes a simple development workflow with formatting, linting, and type checking:
+
+### Make Commands
+
+```bash
+make            # Run all checks (setup, format, lint, type-check)
+make setup      # Install dependencies and set up pre-commit hooks
+make format     # Format code with black and isort
+make lint       # Run linting with ruff
+make type-check # Run type checking with mypy
+make check      # Run format + lint + type-check
+make clean      # Clean up cache files
+make help       # Show all available commands
+```
+
+### Pre-commit Hooks
+
+Pre-commit hooks are automatically installed with `make setup` and will run:
+- **Black**: Code formatting
+- **isort**: Import sorting
+- **Ruff**: Fast linting and additional formatting
+- **MyPy**: Static type checking
+- **Basic checks**: Trailing whitespace, file endings, YAML/TOML validation
+
+### Demo Commands
+
+```bash
+make demo-lecture01  # Run lecture01 demo with AAPL
+make demo-lecture02  # Run lecture02 demo
+```
 
 ## Lecture 01: Single Agent with Web Search
 
@@ -62,9 +107,55 @@ uv run lecture01 MSFT
 uv run python -m lecture01.main AAPL
 ```
 
+## Lecture 02: Agent Delegation Pattern
+
+This lecture demonstrates the **Agent Delegation** communication pattern, where one agent delegates specific tasks to specialized agents through tool calls.
+
+### Architecture Overview
+
+The **Agent Delegation** pattern showcases:
+- **Primary Agent**: `StockRecommender` - orchestrates the overall workflow
+- **Specialized Agent**: `StockAnalysisAgent` - provides detailed stock analysis
+- **Tool-based Communication**: The primary agent calls the specialized agent through a tool interface
+
+### Features
+
+- **Multi-Agent Coordination**: StockRecommender delegates stock analysis to StockAnalysisAgent
+- **Shared Tools**: Common web search functionality moved to shared utilities
+- **Agent-as-Tool Pattern**: StockAnalysisAgent is wrapped as a tool for delegation
+- **Comparative Analysis**: Analyzes multiple stocks and provides recommendations
+- **Structured Workflow**: Search → Analyze → Compare → Recommend
+
+### Usage
+
+```bash
+# Run the agent delegation demo
+uv run lecture02
+
+# The agent will:
+# 1. Search for trending/up-and-coming stocks
+# 2. Select 3 interesting candidates
+# 3. Get detailed reports for each using StockAnalysisAgent
+# 4. Compare and provide recommendations
+```
+
 ### What You'll See
 
 When you run the demo, you'll observe:
+
+1. **Primary Agent Initialization**: StockRecommender sets up with delegation tools
+2. **Web Search Phase**: Searching for trending stocks and market opportunities
+3. **Stock Selection**: Agent reasoning about which 3 stocks to analyze
+4. **Delegation in Action**: Multiple calls to StockAnalysisAgent for detailed reports
+5. **Comparative Analysis**: Agent comparing the three stock reports
+6. **Final Recommendations**: Structured recommendations for each stock
+
+### Key Components
+
+- **`StockRecommender`**: Primary agent that orchestrates the workflow
+- **`get_stock_report` tool**: Wraps StockAnalysisAgent as a callable tool
+- **Shared `web_search` tool**: Moved to common utilities for reuse
+- **Agent Delegation Pattern**: Demonstrates how agents can call other agents as tools
 
 1. **Agent Initialization**: The agent sets up with the configured model and tools
 2. **Search Process**: Multiple web searches being executed to gather information
@@ -115,23 +206,23 @@ ENABLE_LOGFIRE=true
 1. **Tavily API Key**: Sign up at [tavily.com](https://tavily.com) to get your API key for web search functionality
 2. **LiteLLM Setup**: Configure your LiteLLM proxy endpoint and API key, or use OpenAI directly
 3. **Logfire Setup** (optional, for web UI observability):
-   
+
    **Option A: Use Console Traces (Recommended for Demos)**
    - No additional setup needed
    - Perfect real-time visibility during live coding
    - All traces appear in terminal output
-   
+
    **Option B: Web UI Setup**
    ```bash
    # Authenticate with Logfire
    uv run logfire auth
-   
+
    # Set up project (interactive - choose from existing projects)
    cd /path/to/project
    uv run logfire projects use
    # Select: 1 (for amit-goldstein/starter-project)
    ```
-   
+
    **Note**: Console traces provide excellent visibility and are ideal for live demonstrations.
 
 ## Dependencies
@@ -145,7 +236,6 @@ ENABLE_LOGFIRE=true
 
 This project will be extended with additional lectures covering:
 
-- **Lecture 02**: Multi-agent systems with specialized roles
 - **Lecture 03**: Agent communication patterns and coordination
 - **Lecture 04**: Advanced workflows and error handling
 - **Lecture 05**: Performance optimization and scaling

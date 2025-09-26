@@ -5,7 +5,7 @@ Commit your changes
 ## Command
 
 ```bash
-commit
+/commit
 ```
 
 ## What This Command Does
@@ -15,9 +15,8 @@ commit
 
 ## Usage
 
-Simply run this command in your terminal:
+Simply run this command in your cursor chat:
 
 ```bash
-commit
+/commit
 ```
-

@@ -1,6 +1,6 @@
 # Make Command
 
-Run `make` and automatically fix all issues that arise.
+Run `make` to set up the development environment and run all code quality checks.
 
 ## Command
 
@@ -10,20 +10,18 @@ make
 
 ## What This Command Does
 
-1. **Verifies virtual environment** - Ensures the command is running in an active Python virtual environment
-2. **Runs the full build pipeline** including:
-   - Pre-commit hooks (formatting, linting, type checking)
-   - Unit tests
-   - Coverage reporting
+1. **Sets up the development environment**:
+   - Installs all dependencies including dev tools
+   - Sets up pre-commit hooks automatically
+2. **Runs code quality checks**:
+   - **Formatting**: Black and isort for consistent code style
+   - **Linting**: Ruff for fast, comprehensive linting
+   - **Type checking**: MyPy for static type analysis
 3. **Automatically fixes common issues**:
-   - Code formatting (ruff, black)
-   - Trailing whitespace
-   - Import sorting
-   - Type hints
-4. **Performs semantic analysis** on changed files:
-   - Verifies all imports are absolute imports
-   - Checks for unnecessary inline imports
-5. **Runs until all issues are resolved**
+   - Code formatting with Black
+   - Import sorting with isort
+   - Auto-fixable linting issues with Ruff
+   - Trailing whitespace and file endings
 
 ## Usage
 
@@ -33,100 +31,92 @@ Simply run this command in your terminal:
 make
 ```
 
-## Virtual Environment Check
-
-The command will first verify you're in an active virtual environment:
+## Available Make Targets
 
 ```bash
-# Check if we're in a virtual environment
-if [[ -z "$VIRTUAL_ENV" ]]; then
-    echo "❌ Error: Not running in a virtual environment"
-    echo "Please activate your virtual environment first:"
-    echo "  source venv/bin/activate  # or equivalent"
-    exit 1
-fi
-
-echo "✅ Virtual environment detected: $VIRTUAL_ENV"
+make            # Default: setup + format + lint + type-check
+make setup      # Install dependencies and set up pre-commit hooks
+make format     # Format code with black and isort
+make lint       # Run linting with ruff
+make type-check # Run type checking with mypy
+make check      # Run format + lint + type-check
+make clean      # Clean up cache files
+make help       # Show all available commands
 ```
 
-## Semantic Analysis
-
-The command performs semantic analysis on all changed files to ensure code quality and consistency:
-
-### Import Verification
-
-1. **Absolute Imports Check**:
-   - Scans all changed Python files for import statements
-   - Verifies that all imports use absolute paths (e.g., `from src.module import function`)
-   - Flags any relative imports (e.g., `from .module import function` or `from ..module import function`)
-
-2. **Inline Import Detection**:
-   - Identifies imports placed inside functions, methods, or conditional blocks
-   - Flags unnecessary inline imports that should be moved to the top of the file
-   - Allows exceptions only for truly necessary cases (e.g., conditional imports for optional dependencies)
-
-### Analysis Process
+## Demo Commands
 
 ```bash
-# Example of what the semantic analysis checks:
-# ✅ Good: Absolute import at top of file
-from src.tasks.service import TaskService
-
-# ❌ Bad: Relative import
-from .service import TaskService
-
-# ❌ Bad: Inline import (unless absolutely necessary)
-def some_function():
-    from src.tasks.service import TaskService  # Should be at top
+make demo-lecture01  # Run lecture01 demo with AAPL
+make demo-lecture02  # Run lecture02 demo
 ```
 
-### Fixing Import Issues
+## Code Quality Tools
 
-When import issues are detected:
-1. **Relative imports** are automatically converted to absolute imports
-2. **Inline imports** are moved to the top of the file (unless flagged as necessary)
-3. **Import organization** follows the standard: standard library → third-party → local imports
+The make command uses modern Python tooling for code quality:
+
+### Formatting Tools
+- **Black**: Uncompromising Python code formatter
+- **isort**: Sorts and organizes imports consistently
+
+### Linting Tools
+- **Ruff**: Fast Python linter that replaces flake8, pylint, and more
+  - Checks for code style issues
+  - Identifies potential bugs
+  - Enforces best practices
+  - Auto-fixes many issues
+
+### Type Checking
+- **MyPy**: Static type checker for Python
+  - Validates type hints
+  - Catches type-related errors
+  - Improves code reliability
 
 ## Expected Output
 
 The command will:
-- Verify virtual environment is active
-- Show progress of each build step
-- Automatically fix formatting issues
-- Perform semantic analysis on changed files
-- Verify absolute imports and fix relative imports
-- Move inline imports to top of files (where appropriate)
-- Run tests and show results
-- Display coverage information
-- Exit with success (0) when all issues are resolved
+- Install dependencies and set up pre-commit hooks
+- Show progress of each step
+- Automatically fix formatting issues with Black and isort
+- Run Ruff linting with auto-fixes where possible
+- Perform type checking with MyPy
+- Display results for each step
+- Exit with success (0) when all checks pass
+
+## Pre-commit Integration
+
+After running `make setup`, pre-commit hooks are automatically installed and will run on every commit:
+- Prevents commits with formatting issues
+- Catches linting problems before they reach the repository
+- Ensures consistent code quality across all contributions
 
 ## Troubleshooting
 
-If you encounter persistent issues:
+If you encounter issues:
 
-1. **Check virtual environment**: Ensure you're in an active venv
-   ```bash
-   source venv/bin/activate
-   ```
-
-2. **Check Docker**: Ensure MongoDB container is running
-   ```bash
-   docker compose up --detach
-   ```
-
-3. **Clean environment**: Remove cached files
+1. **Clean environment**: Remove cached files
    ```bash
    make clean
    ```
 
-4. **Manual fixes**: If automatic fixes fail, manually address the specific error messages
+2. **Reinstall dependencies**:
+   ```bash
+   make setup
+   ```
+
+3. **Run individual checks**:
+   ```bash
+   make format     # Fix formatting
+   make lint       # Check linting
+   make type-check # Check types
+   ```
+
+4. **Manual fixes**: Address specific error messages shown by the tools
 
 ## Notes
 
-- This command follows the project's build pipeline defined in `Makefile`
-- Pre-commit hooks will automatically format code before running tests
-- Semantic analysis ensures import consistency across the codebase
-- All tests must pass for the build to succeed
-- Coverage requirements must be met (currently 55%)
-- Make is running also in CI, if make did not pass this branch cannot be pushed to CI
-- You must fix all errors even if they are not relevant directly to the current task
+- This is a simplified setup for a lecture repository (no unit tests)
+- Pre-commit hooks ensure code quality on every commit
+- All tools are configured to work together harmoniously
+- The setup uses modern Python tooling (Ruff, Black, MyPy)
+- Use `make help` to see all available commands

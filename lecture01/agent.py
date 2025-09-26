@@ -1,32 +1,28 @@
 """Single agent implementation for stock analysis using web search."""
 
 import logging
-from typing import List
-from datetime import datetime
 
-from pydantic_ai import Agent, RunContext
-from pydantic_ai.common_tools.tavily import tavily_search_tool
-from pydantic_ai.models.openai import OpenAIModel
-from pydantic_ai.providers.openai import OpenAIProvider
+from pydantic_ai import Agent
 
-from common.models import StockReport, SearchResult
 from common.config import config
-from common.utils import get_current_date, validate_stock_symbol
+from common.models import StockReport
+from common.tools import web_search_tool
+from common.utils import create_agent_model, get_current_date, validate_stock_symbol
 
 logger = logging.getLogger(__name__)
 
 
 class StockAnalysisAgent:
     """Single agent for comprehensive stock analysis using web search."""
-    
+
     def __init__(self):
         """Initialize the stock analysis agent."""
         # Validate configuration
         config.validate_required_keys()
-        
-        # Create the Tavily search tool
-        self.search_tool = tavily_search_tool(config.TAVILY_API_KEY)
-        
+
+        # Use the shared web search tool
+        self.search_tool = web_search_tool
+
         # System prompt for the agent
         system_prompt = """
 You are an expert financial analyst specializing in stock analysis and market research.
@@ -66,21 +62,10 @@ OUTPUT REQUIREMENTS:
 
 Remember: Your analysis should be thorough, factual, and useful for investment decision-making.
         """.strip()
-        
-        # Create the model with LiteLLM configuration
-        if config.LITELLM_BASE_URL and config.LITELLM_API_KEY:
-            provider = OpenAIProvider(
-                base_url=config.LITELLM_BASE_URL,
-                api_key=config.LITELLM_API_KEY,
-            )
-            model = OpenAIModel(
-                config.AGENT_MODEL,
-                provider=provider,
-            )
-        else:
-            # Fallback to direct model name
-            model = config.AGENT_MODEL
-        
+
+        # Create the model using shared utility
+        model = create_agent_model()
+
         # Create the agent
         self.agent = Agent(
             model=model,
@@ -88,31 +73,31 @@ Remember: Your analysis should be thorough, factual, and useful for investment d
             output_type=StockReport,
             system_prompt=system_prompt,
         )
-        
+
         logger.info(f"StockAnalysisAgent initialized with model: {config.AGENT_MODEL}")
-    
+
     async def analyze_stock(self, symbol: str) -> StockReport:
         """
         Analyze a stock and generate a comprehensive report.
-        
+
         Args:
             symbol: Stock ticker symbol (e.g., 'AAPL', 'TSLA')
-            
+
         Returns:
             StockReport: Comprehensive analysis report
         """
         # Validate and normalize the stock symbol
         normalized_symbol = validate_stock_symbol(symbol)
-        
+
         logger.info(f"Starting stock analysis for: {normalized_symbol}")
-        
+
         # Create the analysis prompt
         prompt = f"""
 Please analyze the stock {normalized_symbol} and provide a comprehensive report.
 
 I need you to research and analyze:
 1. Current stock price and recent performance
-2. Company overview and recent business developments  
+2. Company overview and recent business developments
 3. Recent financial results and key metrics
 4. Latest news and market sentiment
 5. Analyst opinions and recommendations
@@ -124,63 +109,16 @@ Make sure to search for multiple aspects of the company and stock performance.
 
 The analysis date should be: {get_current_date()}
         """.strip()
-        
+
         try:
             # Run the agent analysis
             result = await self.agent.run(prompt)
-            
+
             logger.info(f"Stock analysis completed for {normalized_symbol}")
             logger.debug(f"Analysis result: {result.output}")
-            
+
             return result.output
-            
-        except Exception as e:
-            logger.error(f"Error analyzing stock {normalized_symbol}: {str(e)}")
-            raise
-    
-    def analyze_stock_sync(self, symbol: str) -> StockReport:
-        """
-        Synchronous version of analyze_stock.
-        
-        Args:
-            symbol: Stock ticker symbol (e.g., 'AAPL', 'TSLA')
-            
-        Returns:
-            StockReport: Comprehensive analysis report
-        """
-        # Validate and normalize the stock symbol
-        normalized_symbol = validate_stock_symbol(symbol)
-        
-        logger.info(f"Starting synchronous stock analysis for: {normalized_symbol}")
-        
-        # Create the analysis prompt
-        prompt = f"""
-Please analyze the stock {normalized_symbol} and provide a comprehensive report.
 
-I need you to research and analyze:
-1. Current stock price and recent performance
-2. Company overview and recent business developments  
-3. Recent financial results and key metrics
-4. Latest news and market sentiment
-5. Analyst opinions and recommendations
-6. Risk factors and challenges
-7. Investment recommendation with reasoning
-
-Please use the web search tool to gather current, accurate information from reliable financial sources.
-Make sure to search for multiple aspects of the company and stock performance.
-
-The analysis date should be: {get_current_date()}
-        """.strip()
-        
-        try:
-            # Run the agent analysis synchronously
-            result = self.agent.run_sync(prompt)
-            
-            logger.info(f"Synchronous stock analysis completed for {normalized_symbol}")
-            logger.debug(f"Analysis result: {result.output}")
-            
-            return result.output
-            
         except Exception as e:
             logger.error(f"Error analyzing stock {normalized_symbol}: {str(e)}")
             raise

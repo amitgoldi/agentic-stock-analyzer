@@ -1,54 +1,59 @@
 """Configuration management for the application."""
 
-import os
-from typing import Optional
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
-class Config:
-    """Application configuration."""
-    
+class Config(BaseSettings):
+    """Application configuration using Pydantic Settings."""
+
     # Tavily API Configuration
-    TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
-    TAVILY_MAX_RESULTS: int = int(os.getenv("TAVILY_MAX_RESULTS", "10"))
-    TAVILY_SEARCH_DEPTH: str = os.getenv("TAVILY_SEARCH_DEPTH", "advanced")
-    
+    TAVILY_API_KEY: str = Field(default="", description="Tavily API key for web search")
+    TAVILY_MAX_RESULTS: int = Field(
+        default=10, description="Maximum search results from Tavily"
+    )
+    TAVILY_SEARCH_DEPTH: str = Field(
+        default="advanced", description="Tavily search depth"
+    )
+
     # LLM Configuration
-    AGENT_MODEL: str = os.getenv("AGENT_MODEL", "gpt-4.1_2025-04-14")
-    AGENT_TEMPERATURE: float = float(os.getenv("AGENT_TEMPERATURE", "0.1"))
-    AGENT_MAX_RETRIES: int = int(os.getenv("AGENT_MAX_RETRIES", "3"))
-    
+    AGENT_MODEL: str = Field(
+        default="gpt-4.1_2025-04-14", description="LLM model to use"
+    )
+    AGENT_TEMPERATURE: float = Field(default=0.1, description="LLM temperature setting")
+    AGENT_MAX_RETRIES: int = Field(
+        default=3, description="Maximum retries for LLM calls"
+    )
+
     # LiteLLM Configuration
-    LITELLM_BASE_URL: str = os.getenv("LITELLM_BASE_URL", "")
-    LITELLM_API_KEY: str = os.getenv("LITELLM_API_KEY", "")
-    
+    LITELLM_BASE_URL: str = Field(default="", description="LiteLLM proxy base URL")
+    LITELLM_API_KEY: str = Field(default="", description="LiteLLM API key")
+
     # Logfire Configuration
-    LOGFIRE_API_KEY: str = os.getenv("LOGFIRE_API_KEY", "")
-    LOGFIRE_PROJECT_ID: str = os.getenv("LOGFIRE_PROJECT_ID", "")
-    ENABLE_LOGFIRE: bool = os.getenv("ENABLE_LOGFIRE", "true").lower() == "true"
-    
+    LOGFIRE_API_KEY: str = Field(
+        default="", description="Logfire API key for observability"
+    )
+    LOGFIRE_PROJECT_ID: str = Field(default="", description="Logfire project ID")
+    ENABLE_LOGFIRE: bool = Field(default=True, description="Enable Logfire integration")
+
     # Application Configuration
-    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
-    LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
-    
-    @classmethod
-    def validate_required_keys(cls) -> None:
+    DEBUG: bool = Field(default=False, description="Enable debug mode")
+    LOG_LEVEL: str = Field(default="INFO", description="Logging level")
+
+    class Config:
+        """Pydantic configuration."""
+
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = True
+
+    def validate_required_keys(self) -> None:
         """Validate that all required configuration keys are present."""
-        required_keys = [
-            ("TAVILY_API_KEY", cls.TAVILY_API_KEY),
-        ]
-        
-        missing_keys = []
-        for key_name, key_value in required_keys:
-            if not key_value:
-                missing_keys.append(key_name)
-        
-        if missing_keys:
-            error_msg = f"Missing required environment variables: {', '.join(missing_keys)}\n"
-            error_msg += "Please copy .env.example to .env and configure your API keys."
+        if not self.TAVILY_API_KEY:
+            error_msg = (
+                "Missing required environment variable: TAVILY_API_KEY\n"
+                "Please copy .env.example to .env and configure your API keys."
+            )
             raise ValueError(error_msg)
 
 
