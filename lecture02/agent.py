@@ -1,180 +1,124 @@
-"""Agent Delegation Pattern implementation for stock recommendations.
-
-This module demonstrates the Agent Delegation communication pattern where
-a primary agent (StockRecommender) delegates specific tasks to specialized
-agents (StockAnalysisAgent) through tool calls.
-"""
+"""Single agent implementation for stock analysis using web search."""
 
 import logging
 
-from pydantic_ai import Agent, RunContext
-from pydantic_ai.tools import Tool
+from pydantic_ai import Agent
 
 from common.config import config
-from common.models import StockRecommendationReport, StockReport
+from common.models import StockReport
 from common.tools import web_search_tool
-from common.utils import create_agent_model, get_current_date
-from lecture01.agent import StockAnalysisAgent
+from common.utils import create_agent_model, get_current_date, validate_stock_symbol
 
 logger = logging.getLogger(__name__)
 
 
-def create_stock_analysis_tool() -> Tool:
-    """Create a tool that wraps the StockAnalysisAgent for delegation."""
-
-    # Create a single instance of the analysis agent to reuse
-    analysis_agent = StockAnalysisAgent()
-
-    async def get_stock_report(ctx: RunContext, symbol: str) -> StockReport:
-        """
-        Get a detailed stock analysis report for a given symbol.
-
-        This tool delegates to the specialized StockAnalysisAgent to get
-        comprehensive analysis of individual stocks.
-
-        Args:
-            symbol: Stock ticker symbol (e.g., 'AAPL', 'TSLA')
-
-        Returns:
-            StockReport: Detailed analysis report for the stock
-        """
-        logger.info(f"Delegating stock analysis for {symbol} to StockAnalysisAgent")
-        return await analysis_agent.analyze_stock(symbol)
-
-    return Tool(
-        get_stock_report,
-        description="Get detailed stock analysis report for a given symbol",
-    )
-
-
-class StockRecommender:
-    """
-    Primary agent that demonstrates the Agent Delegation pattern.
-
-    This agent orchestrates the overall workflow by:
-    1. Searching for trending/promising stocks
-    2. Selecting candidates for analysis
-    3. Delegating detailed analysis to StockAnalysisAgent
-    4. Comparing results and providing recommendations
-    """
+class StockAnalysisAgent:
+    """Single agent for comprehensive stock analysis using web search."""
 
     def __init__(self):
-        """Initialize the stock recommender agent."""
+        """Initialize the stock analysis agent."""
         # Validate configuration
         config.validate_required_keys()
 
-        # Create the stock analysis tool for delegation
-        self.stock_analysis_tool = create_stock_analysis_tool()
+        # Use the shared web search tool
+        self.search_tool = web_search_tool
 
-        # System prompt for the recommender agent
+        # System prompt for the agent
         system_prompt = """
-You are an expert investment strategist and portfolio manager specializing in identifying promising stock opportunities.
+You are an expert financial analyst specializing in stock analysis and market research.
 
-Your role is to orchestrate a comprehensive stock recommendation process by:
+Your task is to create comprehensive stock reports by gathering and analyzing current information about publicly traded companies.
 
-1. **Market Research**: Search for trending stocks, emerging opportunities, and market insights
-2. **Stock Selection**: Identify 3 promising stocks based on current market conditions
-3. **Detailed Analysis**: Delegate comprehensive analysis to specialized agents for each selected stock
-4. **Comparative Analysis**: Compare the detailed reports and provide investment recommendations
+CAPABILITIES:
+- You have access to a web search tool that can find real-time information about stocks, companies, and market conditions
+- You can search for financial news, earnings reports, analyst opinions, and market data
+- You should gather information from multiple reliable sources
 
-DELEGATION STRATEGY:
-- Use the get_stock_report tool to delegate detailed analysis to the specialized StockAnalysisAgent
-- The specialized agent will provide comprehensive reports including financials, news, and analysis
-- Focus your role on high-level strategy, selection criteria, and comparative analysis
+ANALYSIS FRAMEWORK:
+When analyzing a stock, you should:
 
-SELECTION CRITERIA:
-Consider stocks that show:
-- Strong growth potential or value opportunities
-- Positive market sentiment or contrarian opportunities
-- Recent positive developments or catalysts
-- Diverse sectors to provide portfolio balance
-- Different risk/reward profiles
-
-OUTPUT REQUIREMENTS:
-- Provide a structured StockRecommendationReport
-- Include clear market overview and selection rationale
-- For each stock, provide specific recommendation type (Strong Buy, Buy, Hold, etc.)
-- Include confidence levels and time horizons
-- Provide comparative analysis highlighting relative strengths
-- Include market outlook and investment implications
+1. **Company Overview**: Get basic company information, business model, and recent developments
+2. **Financial Performance**: Look for recent earnings, revenue trends, and key financial metrics
+3. **Market Position**: Research competitive landscape and market share
+4. **Recent News**: Find recent news that could impact the stock price
+5. **Analyst Opinions**: Look for professional analyst ratings and price targets
+6. **Risk Assessment**: Identify potential risks and challenges
+7. **Market Sentiment**: Gauge overall market sentiment toward the stock
 
 SEARCH STRATEGY:
-- Search for "trending stocks 2024", "best stocks to buy now", "emerging market opportunities"
-- Look for recent IPOs, earnings winners, or sector rotation opportunities
-- Consider both growth and value opportunities
-- Search for analyst upgrades and institutional buying
+- Use multiple targeted searches to gather comprehensive information
+- Search for recent news (last 3-6 months) for current relevance
+- Look for both positive and negative information to provide balanced analysis
+- Verify information from multiple sources when possible
+- Focus on reputable financial news sources and official company communications
 
-Remember: You are the orchestrator - delegate detailed analysis but provide strategic oversight and comparative insights.
+OUTPUT REQUIREMENTS:
+- Provide a structured analysis following the StockReport format
+- Include specific data points when available (prices, percentages, dates)
+- Cite your sources and indicate when information is current
+- Be objective and balanced in your analysis
+- Clearly distinguish between facts and opinions/projections
+- If certain information is not available, acknowledge this rather than speculating
+
+Remember: Your analysis should be thorough, factual, and useful for investment decision-making.
         """.strip()
 
         # Create the model using shared utility
         model = create_agent_model()
 
-        # Create the agent with delegation tools
+        # Create the agent
         self.agent = Agent(
             model=model,
-            tools=[web_search_tool, self.stock_analysis_tool],
-            output_type=StockRecommendationReport,
+            tools=[self.search_tool],
+            output_type=StockReport,
             system_prompt=system_prompt,
         )
 
-        logger.info("StockRecommender initialized with delegation capabilities")
+        logger.info(f"StockAnalysisAgent initialized with model: {config.AGENT_MODEL}")
 
-    async def get_recommendations(self) -> StockRecommendationReport:
+    async def analyze_stock(self, symbol: str) -> StockReport:
         """
-        Get stock recommendations using the Agent Delegation pattern.
+        Analyze a stock and generate a comprehensive report.
 
-        This method demonstrates the delegation pattern by:
-        1. Using web search to identify promising stocks
-        2. Delegating detailed analysis to StockAnalysisAgent
-        3. Providing comparative analysis and recommendations
+        Args:
+            symbol: Stock ticker symbol (e.g., 'AAPL', 'TSLA')
 
         Returns:
-            StockRecommendationReport: Comprehensive recommendation report
+            StockReport: Comprehensive analysis report
         """
-        logger.info("Starting stock recommendation process with agent delegation")
+        # Validate and normalize the stock symbol
+        normalized_symbol = validate_stock_symbol(symbol)
+
+        logger.info(f"Starting stock analysis for: {normalized_symbol}")
 
         # Create the analysis prompt
         prompt = f"""
-Please provide stock recommendations following this process:
+Please analyze the stock {normalized_symbol} and provide a comprehensive report.
 
-1. **Market Research Phase**:
-   - Search for trending stocks, market opportunities, and current market conditions
-   - Look for stocks with recent positive catalysts or strong fundamentals
-   - Consider different sectors and market caps for diversification
+I need you to research and analyze:
+1. Current stock price and recent performance
+2. Company overview and recent business developments
+3. Recent financial results and key metrics
+4. Latest news and market sentiment
+5. Analyst opinions and recommendations
+6. Risk factors and challenges
+7. Investment recommendation with reasoning
 
-2. **Stock Selection Phase**:
-   - Based on your research, select exactly 3 promising stocks
-   - Choose stocks with different risk/reward profiles
-   - Ensure they represent good investment opportunities in the current market
+Please use the web search tool to gather current, accurate information from reliable financial sources.
+Make sure to search for multiple aspects of the company and stock performance.
 
-3. **Delegation Phase**:
-   - For each selected stock, use the get_stock_report tool to get detailed analysis
-   - The specialized agent will provide comprehensive reports with financials, news, and analysis
-   - Collect all three detailed reports
-
-4. **Recommendation Phase**:
-   - Compare the three stocks based on the detailed reports
-   - Provide specific recommendations (Strong Buy, Buy, Hold, etc.) for each
-   - Include confidence levels and investment time horizons
-   - Provide comparative analysis highlighting relative strengths and weaknesses
-
-Current date: {get_current_date()}
-
-Focus on actionable investment recommendations based on current market conditions and the detailed analysis from the specialized agent.
+The analysis date should be: {get_current_date()}
         """.strip()
 
         try:
-            # Run the agent analysis with delegation
+            # Run the agent analysis
             result = await self.agent.run(prompt)
 
-            logger.info("Stock recommendation process completed successfully")
-            logger.debug(
-                f"Generated {len(result.output.recommendations)} recommendations"
-            )
+            logger.info(f"Stock analysis completed for {normalized_symbol}")
+            logger.debug(f"Analysis result: {result.output}")
 
             return result.output
 
         except Exception as e:
-            logger.error(f"Error in recommendation process: {str(e)}")
+            logger.error(f"Error analyzing stock {normalized_symbol}: {str(e)}")
             raise

@@ -32,7 +32,7 @@ lint: ## Run linting with ruff
 
 type-check: ## Run type checking with mypy
 	@echo "🔎 Running type checker..."
-	uv run mypy common/ lecture01/ lecture02/ --ignore-missing-imports --no-strict-optional
+	uv run mypy . --ignore-missing-imports --no-strict-optional
 	@echo "✅ Type checking complete!"
 
 check: format lint type-check ## Run all checks (format, lint, type-check)
@@ -48,16 +48,16 @@ clean: ## Clean up cache files and temporary files
 	@echo "✅ Cleanup complete!"
 
 # Demo targets
-demo-lecture01: ## Run lecture01 demo with AAPL
-	@echo "🚀 Running Lecture 01 demo..."
-	uv run lecture01 AAPL
-
-demo-lecture02: ## Run lecture02 demo
+demo-lecture02: ## Run lecture02 demo with AAPL
 	@echo "🚀 Running Lecture 02 demo..."
-	uv run lecture02
+	uv run lecture02 AAPL
+
+demo-lecture03: ## Run lecture03 demo
+	@echo "🚀 Running Lecture 03 demo..."
+	uv run lecture03
 
 # Development workflow
 dev: setup ## Set up development environment and run checks
 	@echo "🚀 Development setup complete!"
 	@echo "Run 'make check' to validate your changes"
-	@echo "Run 'make demo-lecture01' or 'make demo-lecture02' to test the demos"
+	@echo "Run 'make demo-lecture02' or 'make demo-lecture02' to test the demos"

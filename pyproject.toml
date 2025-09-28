@@ -16,6 +16,7 @@ dependencies = [
 [project.scripts]
 lecture01 = "lecture01.main:main"
 lecture02 = "lecture02.main:main"
+lecture03 = "lecture03.main:main"
 
 [project.optional-dependencies]
 dev = [

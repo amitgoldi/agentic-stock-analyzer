@@ -47,8 +47,8 @@ make help       # Show all available commands
 ## Demo Commands
 
 ```bash
-make demo-lecture01  # Run lecture01 demo with AAPL
-make demo-lecture02  # Run lecture02 demo
+make demo-lecture02  # Run lecture02 demo with AAPL
+make demo-lecture03  # Run lecture03 demo
 ```
 
 ## Code Quality Tools

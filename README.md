@@ -11,11 +11,11 @@ tikal-lecture-communication-patterns/
 │   ├── config.py          # Configuration management
 │   ├── models.py          # Pydantic models for data structures
 │   └── utils.py           # Common utility functions
-├── lecture01/             # Lecture 1: Single Agent
+├── lecture02/             # Lecture 1: Single Agent
 │   ├── __init__.py
 │   ├── agent.py           # Single agent implementation
 │   └── main.py            # Main entry point for demo
-├── lecture02/             # Lecture 2: Agent Delegation
+├── lecture03/             # Lecture 2: Agent Delegation
 │   ├── __init__.py
 │   ├── agent.py           # StockRecommender agent implementation
 │   └── main.py            # Main entry point for demo
@@ -77,11 +77,11 @@ Pre-commit hooks are automatically installed with `make setup` and will run:
 ### Demo Commands
 
 ```bash
-make demo-lecture01  # Run lecture01 demo with AAPL
-make demo-lecture02  # Run lecture02 demo
+make demo-lecture02  # Run lecture02 demo with AAPL
+make demo-lecture03  # Run lecture03 demo
 ```
 
-## Lecture 01: Single Agent with Web Search
+## Lecture 02: Single Agent with Web Search
 
 This lecture demonstrates a single AI agent that uses web search to analyze stocks and generate comprehensive reports.
 
@@ -97,17 +97,17 @@ This lecture demonstrates a single AI agent that uses web search to analyze stoc
 
 ```bash
 # Run the demo with a stock symbol using the script entrypoint
-uv run lecture01 AAPL
+uv run lecture02 AAPL
 
 # Or with any other stock symbol
-uv run lecture01 TSLA
-uv run lecture01 MSFT
+uv run lecture02 TSLA
+uv run lecture02 MSFT
 
 # Alternative: run as module
-uv run python -m lecture01.main AAPL
+uv run python -m lecture02.main AAPL
 ```
 
-## Lecture 02: Agent Delegation Pattern
+## Lecture 03: Agent Delegation Pattern
 
 This lecture demonstrates the **Agent Delegation** communication pattern, where one agent delegates specific tasks to specialized agents through tool calls.
 
@@ -130,7 +130,7 @@ The **Agent Delegation** pattern showcases:
 
 ```bash
 # Run the agent delegation demo
-uv run lecture02
+uv run lecture03
 
 # The agent will:
 # 1. Search for trending/up-and-coming stocks

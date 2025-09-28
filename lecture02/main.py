@@ -1,18 +1,15 @@
 """
-Lecture 02: Agent Delegation Pattern
+Lecture 02: Single Agent Stock Analysis
 
-This module demonstrates the Agent Delegation communication pattern where
-a primary agent (StockRecommender) delegates specific tasks to specialized
-agents (StockAnalysisAgent) through tool calls.
+This module demonstrates a single AI agent that uses web search to analyze stocks.
+The agent gathers information from the web and provides comprehensive stock reports.
 
 Usage:
-    python -m lecture02.main
+    python -m lecture02.main [STOCK_SYMBOL]
 
-The agent will automatically:
-1. Search for trending/up-and-coming stocks
-2. Select 3 interesting candidates
-3. Get detailed reports for each using StockAnalysisAgent
-4. Compare and provide recommendations
+Example:
+    python -m lecture02.main AAPL
+    python -m lecture02.main TSLA
 """
 
 import asyncio
@@ -26,98 +23,83 @@ from common.utils import (
     setup_logfire,
     setup_logging,
 )
-from lecture02.agent import StockRecommender
+from lecture02.agent import StockAnalysisAgent
 
 logger = logging.getLogger(__name__)
 
 
-def print_recommendation_report(report) -> None:
-    """Print the stock recommendation report in a formatted way."""
-    print_section_header("STOCK RECOMMENDATION REPORT")
+def print_report(report, symbol: str) -> None:
+    """Print the stock report in a formatted way."""
+    print_section_header(f"STOCK ANALYSIS REPORT: {symbol}")
 
+    print(f"Company: {report.company_name}")
+    print(f"Symbol: {report.symbol}")
     print(f"Analysis Date: {report.analysis_date}")
-    print()
 
-    print_subsection_header("MARKET OVERVIEW")
-    print(report.market_overview)
-    print()
+    if report.current_price is not None:
+        print(f"Current Price: ${report.current_price:.2f}")
 
-    print_subsection_header("SELECTION CRITERIA")
-    print(report.selection_criteria)
-    print()
+    if report.price_change is not None and report.price_change_percent is not None:
+        change_sign = "+" if report.price_change >= 0 else ""
+        print(
+            f"Price Change: {change_sign}${report.price_change:.2f} ({change_sign}{report.price_change_percent:.2f}%)"
+        )
 
-    # Print each recommendation
-    for i, rec in enumerate(report.recommendations, 1):
-        print_subsection_header(f"RECOMMENDATION #{i}: {rec.symbol}")
-        print(f"Company: {rec.company_name}")
-        print(f"Symbol: {rec.symbol}")
-        print(f"Recommendation: {rec.recommendation_type}")
-        print(f"Confidence Level: {rec.confidence_level}")
-        print(f"Time Horizon: {rec.time_horizon}")
+    print_subsection_header("EXECUTIVE SUMMARY")
+    print(report.executive_summary)
 
-        if rec.potential_upside:
-            print(f"Potential Upside: {rec.potential_upside}")
+    if report.recent_news:
+        print_subsection_header("RECENT NEWS")
+        for i, news in enumerate(report.recent_news, 1):
+            print(f"{i}. {news}")
 
-        if rec.key_reasons:
-            print("\nKey Reasons:")
-            for j, reason in enumerate(rec.key_reasons, 1):
-                print(f"  {j}. {reason}")
+    if report.financial_highlights:
+        print_subsection_header("FINANCIAL HIGHLIGHTS")
+        for i, highlight in enumerate(report.financial_highlights, 1):
+            print(f"{i}. {highlight}")
 
-        if rec.main_risks:
-            print("\nMain Risks:")
-            for j, risk in enumerate(rec.main_risks, 1):
-                print(f"  {j}. {risk}")
+    print_subsection_header("MARKET SENTIMENT")
+    print(report.market_sentiment)
 
-        print()
+    if report.risk_factors:
+        print_subsection_header("RISK FACTORS")
+        for i, risk in enumerate(report.risk_factors, 1):
+            print(f"{i}. {risk}")
 
-    print_subsection_header("COMPARATIVE ANALYSIS")
-    print(report.comparative_analysis)
-    print()
+    print_subsection_header("RECOMMENDATION")
+    print(report.recommendation)
 
-    print_subsection_header("MARKET OUTLOOK")
-    print(report.market_outlook)
-    print()
-
-    print_subsection_header("DISCLAIMER")
-    print(report.disclaimer)
+    if report.data_sources:
+        print_subsection_header("DATA SOURCES")
+        for i, source in enumerate(report.data_sources, 1):
+            print(f"{i}. {source}")
 
 
-async def get_recommendations_async() -> None:
-    """Get stock recommendations asynchronously."""
+async def analyze_stock_async(symbol: str) -> None:
+    """Analyze a stock asynchronously."""
     try:
-        print_section_header("INITIALIZING STOCK RECOMMENDER AGENT")
+        print_section_header("INITIALIZING STOCK ANALYSIS AGENT")
         print(f"Model: {config.AGENT_MODEL}")
         print(f"Temperature: {config.AGENT_TEMPERATURE}")
         print(f"Max Results: {config.TAVILY_MAX_RESULTS}")
         print(f"Search Depth: {config.TAVILY_SEARCH_DEPTH}")
-        print()
-        print("Agent Delegation Pattern:")
-        print("- Primary Agent: StockRecommender (orchestrates workflow)")
-        print("- Specialized Agent: StockAnalysisAgent (provides detailed analysis)")
-        print("- Communication: Tool-based delegation")
 
         # Create the agent
-        agent = StockRecommender()
+        agent = StockAnalysisAgent()
 
-        print_section_header("STARTING RECOMMENDATION PROCESS")
-        print("The agent will:")
-        print("1. Search for trending/up-and-coming stocks")
-        print("2. Select 3 interesting candidates")
-        print("3. Delegate detailed analysis to StockAnalysisAgent for each")
-        print("4. Compare results and provide recommendations")
-        print()
-        print("This may take several minutes as the agent performs multiple searches")
-        print("and delegates analysis to the specialized agent...")
+        print_section_header("STARTING ANALYSIS")
+        print(f"Analyzing stock: {symbol}")
+        print("This may take a few moments as the agent searches for information...")
 
-        # Get recommendations
-        report = await agent.get_recommendations()
+        # Analyze the stock
+        report = await agent.analyze_stock(symbol)
 
         # Print the results
-        print_recommendation_report(report)
+        print_report(report, symbol)
 
     except Exception as e:
-        logger.error(f"Recommendation process failed: {e}")
-        print(f"\nERROR: Recommendation process failed - {e}")
+        logger.error(f"Analysis failed: {e}")
+        print(f"\nERROR: Analysis failed - {e}")
         sys.exit(1)
 
 
@@ -129,23 +111,24 @@ def main() -> None:
     # Set up Logfire instrumentation
     setup_logfire(
         service_name="stock-analysis-lecture02",
-        start_message="🚀 Tikal Lecture 02 - Agent Delegation Pattern Started",
-        extra_data={"pattern": "delegation"},
+        start_message="🚀 Tikal Lecture 02 - Stock Analysis Agent Started",
+        extra_data={"stock_symbol": "demo"},
     )
 
-    print_section_header("TIKAL LECTURE 02: AGENT DELEGATION PATTERN")
-    print("This demo shows the Agent Delegation communication pattern where")
-    print("a primary agent delegates specific tasks to specialized agents.")
-    print()
-    print("Architecture:")
-    print("- StockRecommender: Primary agent that orchestrates the workflow")
-    print("- StockAnalysisAgent: Specialized agent for detailed stock analysis")
-    print(
-        "- Communication: The primary agent calls the specialized agent through tools"
-    )
+    # Get stock symbol from command line arguments
+    if len(sys.argv) < 2:
+        print("Usage: python -m lecture02.main <STOCK_SYMBOL>")
+        print("Example: python -m lecture02.main AAPL")
+        sys.exit(1)
 
-    # Run the recommendation process asynchronously using asyncio
-    asyncio.run(get_recommendations_async())
+    symbol = sys.argv[1].upper()
+
+    print_section_header("TIKAL LECTURE 02: SINGLE AGENT STOCK ANALYSIS")
+    print("This demo shows a single AI agent using web search to analyze stocks.")
+    print(f"Target Stock: {symbol}")
+
+    # Run the analysis asynchronously using asyncio
+    asyncio.run(analyze_stock_async(symbol))
 
 
 if __name__ == "__main__":
