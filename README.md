@@ -10,12 +10,17 @@ tikal-lecture-communication-patterns/
 │   ├── __init__.py
 │   ├── config.py          # Configuration management
 │   ├── models.py          # Pydantic models for data structures
+│   ├── tools.py           # Shared tools (web search)
 │   └── utils.py           # Common utility functions
-├── lecture02/             # Lecture 1: Single Agent
+├── lecture01/             # Lecture 1: Simple Financial Assistant
+│   ├── __init__.py
+│   ├── agent.py           # Simple financial assistant agent
+│   └── main.py            # Main entry point for demo
+├── lecture02/             # Lecture 2: Single Agent Stock Analysis
 │   ├── __init__.py
 │   ├── agent.py           # Single agent implementation
 │   └── main.py            # Main entry point for demo
-├── lecture03/             # Lecture 2: Agent Delegation
+├── lecture03/             # Lecture 3: Agent Delegation
 │   ├── __init__.py
 │   ├── agent.py           # StockRecommender agent implementation
 │   └── main.py            # Main entry point for demo
@@ -77,11 +82,54 @@ Pre-commit hooks are automatically installed with `make setup` and will run:
 ### Demo Commands
 
 ```bash
+make demo-lecture01  # Run lecture01 demo (simple financial assistant)
 make demo-lecture02  # Run lecture02 demo with AAPL
 make demo-lecture03  # Run lecture03 demo
 ```
 
-## Lecture 02: Single Agent with Web Search
+## Lecture 01: Simple Financial Assistant
+
+This lecture demonstrates a basic financial assistant agent that uses web search to answer financial questions with simple text-based input/output.
+
+### Features
+
+- **Simple Interface**: Text-based Q&A for financial questions
+- **Web Search Integration**: Uses Tavily API for current financial information
+- **Financial Knowledge**: Combines web search with internal financial expertise
+- **Safety First**: Includes appropriate disclaimers and professional consultation reminders
+- **Interactive & Demo Modes**: Both interactive sessions and pre-built example questions
+
+### Usage
+
+```bash
+# Run interactive mode - ask your own questions
+uv run lecture01
+
+# Run demo mode with example questions
+uv run lecture01 --demo
+
+# Alternative: run as module
+uv run python -m lecture01.main
+uv run python -m lecture01.main --demo
+```
+
+### Example Questions
+
+The demo mode showcases answers to:
+- "What is the current price of Bitcoin?"
+- "Should I invest in index funds or individual stocks?"
+- "What are the current interest rates for savings accounts?"
+- "Explain the concept of dollar-cost averaging"
+
+### Architecture
+
+The simple financial assistant:
+- Uses a single agent with web search capabilities
+- Provides comprehensive financial guidance with current market data
+- Includes safety disclaimers and professional consultation reminders
+- Has a clean console-based interface for easy interaction
+
+## Lecture 02: Single Agent Stock Analysis
 
 This lecture demonstrates a single AI agent that uses web search to analyze stocks and generate comprehensive reports.
 

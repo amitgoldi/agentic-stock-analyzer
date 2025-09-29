@@ -48,6 +48,10 @@ clean: ## Clean up cache files and temporary files
 	@echo "✅ Cleanup complete!"
 
 # Demo targets
+demo-lecture01: ## Run lecture01 demo (simple financial assistant)
+	@echo "🚀 Running Lecture 01 demo..."
+	uv run lecture01 --demo
+
 demo-lecture02: ## Run lecture02 demo with AAPL
 	@echo "🚀 Running Lecture 02 demo..."
 	uv run lecture02 AAPL
@@ -60,4 +64,4 @@ demo-lecture03: ## Run lecture03 demo
 dev: setup ## Set up development environment and run checks
 	@echo "🚀 Development setup complete!"
 	@echo "Run 'make check' to validate your changes"
-	@echo "Run 'make demo-lecture02' or 'make demo-lecture02' to test the demos"
+	@echo "Run 'make demo-lecture01', 'make demo-lecture02', or 'make demo-lecture03' to test the demos"
