@@ -24,6 +24,14 @@ tikal-lecture-communication-patterns/
 │   ├── __init__.py
 │   ├── agent.py           # Enhanced financial assistant (lecture01 + stock_report tool)
 │   └── main.py            # Main entry point for demo
+├── lecture04/             # Lecture 4: Workflow Communication Pattern
+│   ├── __init__.py
+│   ├── agent.py           # Workflow-based financial assistant with multi-agent orchestration
+│   └── main.py            # Main entry point for demo
+├── lecture05/             # Lecture 5: Agent-to-Agent (A2A) Communication
+│   ├── __init__.py
+│   ├── agent.py           # A2A financial assistant with explicit agent communication
+│   └── main.py            # Main entry point for demo
 ├── .env.example           # Environment variables template
 ├── .env                   # Environment variables (create from .env.example, not in git)
 ├── pyproject.toml         # Project dependencies
@@ -84,7 +92,10 @@ Pre-commit hooks are automatically installed with `make setup` and will run:
 ```bash
 make demo-lecture01  # Run lecture01 demo (simple financial assistant)
 make demo-lecture02  # Run lecture02 demo with AAPL
-make demo-lecture03  # Run lecture03 demo
+make demo-lecture03  # Run lecture03 demo (enhanced financial assistant)
+make demo-lecture04  # Run lecture04 demo (workflow pattern)
+make demo-lecture05  # Run lecture05 demo (A2A communication)
+make a2a-server      # Start A2A stock analysis server for lecture05
 ```
 
 ## Lecture 01: Simple Financial Assistant
@@ -213,6 +224,188 @@ When you run the demo, you'll observe:
 - **`ask_financial_question`**: Same interface as Lecture 01
 - **Tool Composition Pattern**: Demonstrates how to enhance agents by adding specialized tools
 
+## Lecture 04: Workflow Communication Pattern
+
+This lecture demonstrates the **workflow pattern** where a single tool orchestrates multiple specialized agents in sequence to accomplish a complex task. The stock_report tool now uses a multi-agent workflow instead of delegating to a single agent.
+
+### Architecture Overview
+
+This lecture showcases the **workflow communication pattern**:
+- **Orchestration Layer**: The `stock_report` tool acts as a workflow orchestrator
+- **Agent 1 (Analysis)**: Specialized in gathering stock information (all fields except recommendation)
+- **Agent 2 (Recommendation)**: Specialized in generating investment recommendations
+- **Sequential Execution**: Agent 2 receives Agent 1's output as input
+- **Result Composition**: The workflow combines both outputs into a complete StockReport
+
+### Features
+
+- **Workflow Pattern**: Tool orchestrates multiple agents in sequence
+- **Separation of Concerns**: Different agents handle different aspects of analysis
+- **Data Flow**: Output from one agent feeds into the next
+- **Specialized Agents**: Each agent is optimized for its specific task
+- **Comprehensive Analysis**: Multi-step process creates more detailed reports
+- **Interactive & Demo Modes**: Both interactive sessions and pre-built example questions
+
+### Usage
+
+```bash
+# Run interactive mode - ask your own questions
+uv run lecture04
+
+# Run demo mode with example questions showing the workflow in action
+uv run lecture04 --demo
+
+# Alternative: run as module
+uv run python -m lecture04.main
+uv run python -m lecture04.main --demo
+```
+
+### Example Questions
+
+The demo mode showcases the workflow pattern:
+- "What is the current market sentiment?" - General web search
+- "Can you give me a detailed analysis of Microsoft stock (MSFT)?" - Uses workflow
+- "Give me a comprehensive report on NVIDIA (NVDA)" - Uses workflow
+
+### What You'll See
+
+When you run the demo, you'll observe:
+
+1. **Workflow Execution**: The stock_report tool orchestrates multiple agents
+2. **Step 1 - Analysis**: First agent gathers comprehensive stock information
+3. **Step 2 - Recommendation**: Second agent generates investment advice based on analysis
+4. **Step 3 - Composition**: Workflow combines both results into final report
+5. **Enhanced Quality**: Multi-agent approach provides more thorough analysis
+
+### Key Components
+
+- **`workflow_stock_report_tool`**: Orchestrates the multi-agent workflow
+- **`stock_analysis_agent`**: Gathers all stock information except recommendation
+- **`recommendation_agent`**: Generates investment recommendations
+- **`StockAnalysis`**: Intermediate model for passing data between agents
+- **Workflow Pattern**: Demonstrates sequential agent communication and orchestration
+
+### Comparison with Lecture 03
+
+| Aspect | Lecture 03 | Lecture 04 |
+|--------|-----------|-----------|
+| Pattern | Tool delegation | Workflow orchestration |
+| Agents | Single agent | Multiple specialized agents |
+| Execution | One agent does everything | Sequential agent execution |
+| Data Flow | Direct output | Intermediate data passed between agents |
+| Specialization | General-purpose | Task-specific agents |
+
+## Lecture 05: Agent-to-Agent (A2A) Protocol Communication
+
+This lecture demonstrates the **Agent-to-Agent (A2A) protocol** - an open standard introduced by Google that enables communication and interoperability between AI agents, regardless of framework or vendor.
+
+**Reference**: [Pydantic AI A2A Documentation](https://ai.pydantic.dev/a2a/)
+
+### Architecture Overview
+
+This lecture showcases **true A2A protocol communication**:
+- **Protocol-Based**: Uses Google's A2A standard for agent interoperability
+- **HTTP Communication**: Agents communicate over HTTP using A2A protocol format
+- **Server/Client Model**: Stock analysis agent runs as A2A server, financial assistant is client
+- **Standardized Format**: Messages follow A2A protocol specification with tasks and artifacts
+- **Task Management**: Each request creates a task with unique ID and status tracking
+- **Context Continuity**: Supports conversation threads across multiple tasks
+
+### Features
+
+- **A2A Protocol**: Implements Google's standardized agent communication protocol
+- **Agent Interoperability**: Agents can communicate across frameworks/vendors
+- **HTTP-Based**: Communication happens over HTTP (port 8001)
+- **Standardized Messages**: Uses A2A message format with roles, parts, and artifacts
+- **Server Architecture**: Stock analysis agent exposed as ASGI A2A server
+- **Client Integration**: Financial assistant sends A2A protocol requests
+- **Interactive & Demo Modes**: Both interactive sessions and pre-built example questions
+
+### Setup Requirements
+
+**Before running this lecture, you need to start the A2A server:**
+
+```bash
+# Terminal 1 - Start the A2A stock analysis server
+uvicorn lecture05.stock_a2a_server:app --host 0.0.0.0 --port 8001
+
+# Terminal 2 - Run the financial assistant demo
+uv run lecture05
+# or
+uv run lecture05 --demo
+```
+
+The A2A server exposes the stock analysis agent at `http://localhost:8001` following the A2A protocol specification.
+
+### Usage
+
+```bash
+# Step 1: Start the A2A server (in one terminal)
+uvicorn lecture05.stock_a2a_server:app --host 0.0.0.0 --port 8001
+
+# Step 2: Run the demo (in another terminal)
+uv run lecture05              # Interactive mode
+uv run lecture05 --demo       # Demo mode with examples
+
+# Alternative: run as module
+uv run python -m lecture05.main
+```
+
+### Example Questions
+
+The demo mode showcases the A2A protocol:
+- "What is the current price of Bitcoin?" - General web search
+- "Can you give me a detailed analysis of Apple stock (AAPL)?" - A2A protocol communication
+- "Should I invest in index funds or individual stocks?" - General financial advice
+- "Give me a comprehensive report on Tesla (TSLA)" - A2A protocol communication
+
+### What You'll See
+
+When you run the demo, you'll observe:
+
+1. **Protocol Communication**: HTTP requests sent to A2A server following A2A standard
+2. **Task Creation**: Each request creates a task with unique ID
+3. **Artifact Extraction**: StockReport extracted from A2A response artifacts
+4. **Server Logging**: A2A server logs task processing
+5. **True Interoperability**: Agents communicate via standardized protocol
+
+### Key Components
+
+- **`stock_a2a_server.py`**: Exposes stock analysis agent as A2A server using `agent.to_a2a()`
+- **`a2a_financial_agent`**: Financial assistant that sends A2A protocol requests
+- **`a2a_stock_analysis_tool`**: Tool that makes HTTP requests using A2A protocol format
+- **A2A Protocol**: Follows Google's standard for agent communication
+- **ASGI Application**: A2A server is an ASGI app (runs with uvicorn)
+
+### Comparison: Lecture 03 vs. Lecture 05
+
+| Aspect | Lecture 03 (Agent-as-Tool) | Lecture 05 (A2A Protocol) |
+|--------|---------------------------|---------------------------|
+| Pattern | Direct code integration | HTTP protocol communication |
+| Communication | In-process function call | HTTP requests to A2A server |
+| Protocol | None | Google's A2A standard |
+| Agent Location | Same process | Separate service/server |
+| Interoperability | Framework-specific | Cross-framework/vendor |
+| Message Format | Python objects | A2A protocol JSON |
+| Deployment | Single application | Distributed services |
+| Scalability | Limited to process | Horizontally scalable |
+
+### When to Use Each Pattern
+
+**Use Agent-as-Tool (Lecture 03) when:**
+- Simple, in-process delegation
+- All agents in same codebase
+- Single application deployment
+- No need for service separation
+
+**Use A2A Protocol (Lecture 05) when:**
+- Need agent interoperability
+- Distributed agent architecture
+- Agents from different vendors/frameworks
+- Service-oriented architecture
+- Want to follow industry standards
+- Need horizontal scalability
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and configure the following required variables:
@@ -270,8 +463,17 @@ ENABLE_LOGFIRE=true
 
 This project can be extended with additional lectures covering:
 
-- **Lecture 04**: Advanced agent communication patterns and coordination
-- **Lecture 05**: Complex workflows and error handling
-- **Lecture 06**: Performance optimization and scaling
+- **Lecture 06**: Parallel agent execution and coordination
+- **Lecture 07**: Error handling and retry strategies
+- **Lecture 08**: Performance optimization and scaling
 
 Each lecture builds upon the previous ones, demonstrating increasingly sophisticated agent architectures and communication patterns.
+
+## Communication Patterns Summary
+
+| Pattern | Lecture | Key Concept | Best For |
+|---------|---------|-------------|----------|
+| Simple Agent | 01, 02 | Single agent with tools | Straightforward tasks |
+| Agent-as-Tool | 03 | Wrap agent as tool | Simple in-process delegation |
+| Workflow | 04 | Sequential agent orchestration | Multi-step processes |
+| A2A Protocol | 05 | HTTP-based standardized communication | Distributed agents, interoperability |

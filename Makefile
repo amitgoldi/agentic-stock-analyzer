@@ -60,8 +60,22 @@ demo-lecture03: ## Run lecture03 demo (enhanced financial assistant)
 	@echo "🚀 Running Lecture 03 demo..."
 	uv run lecture03 --demo
 
+demo-lecture04: ## Run lecture04 demo (workflow pattern)
+	@echo "🚀 Running Lecture 04 demo..."
+	uv run lecture04 --demo
+
+demo-lecture05: ## Run lecture05 demo (A2A communication)
+	@echo "🚀 Running Lecture 05 demo..."
+	@echo "⚠️  Make sure to start the A2A server first in another terminal:"
+	@echo "   make a2a-server"
+	uv run lecture05 --demo
+
+a2a-server: ## Start the A2A stock analysis server for lecture05
+	@echo "🌐 Starting A2A Stock Analysis Server on port 8001..."
+	uv run uvicorn lecture05.stock_a2a_server:app --host 0.0.0.0 --port 8001 --reload
+
 # Development workflow
 dev: setup ## Set up development environment and run checks
 	@echo "🚀 Development setup complete!"
 	@echo "Run 'make check' to validate your changes"
-	@echo "Run 'make demo-lecture01', 'make demo-lecture02', or 'make demo-lecture03' to test the demos"
+	@echo "Run 'make demo-lectureXX' to test the demos (lecture01-lecture05)"
