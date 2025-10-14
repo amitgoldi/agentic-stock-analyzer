@@ -20,9 +20,9 @@ tikal-lecture-communication-patterns/
 │   ├── __init__.py
 │   ├── agent.py           # Single agent implementation
 │   └── main.py            # Main entry point for demo
-├── lecture03/             # Lecture 3: Agent Delegation
+├── lecture03/             # Lecture 3: Enhanced Financial Assistant
 │   ├── __init__.py
-│   ├── agent.py           # StockRecommender agent implementation
+│   ├── agent.py           # Enhanced financial assistant (lecture01 + stock_report tool)
 │   └── main.py            # Main entry point for demo
 ├── .env.example           # Environment variables template
 ├── .env                   # Environment variables (create from .env.example, not in git)
@@ -155,77 +155,63 @@ uv run lecture02 MSFT
 uv run python -m lecture02.main AAPL
 ```
 
-## Lecture 03: Agent Delegation Pattern
+## Lecture 03: Enhanced Financial Assistant with Tool Delegation
 
-This lecture demonstrates the **Agent Delegation** communication pattern, where one agent delegates specific tasks to specialized agents through tool calls.
+This lecture demonstrates how to **extend a basic agent with specialized tools** by taking the simple financial assistant from Lecture 01 and enhancing it with a `stock_report` tool that internally delegates to the Lecture 02 stock analysis agent.
 
 ### Architecture Overview
 
-The **Agent Delegation** pattern showcases:
-- **Primary Agent**: `StockRecommender` - orchestrates the overall workflow
-- **Specialized Agent**: `StockAnalysisAgent` - provides detailed stock analysis
-- **Tool-based Communication**: The primary agent calls the specialized agent through a tool interface
+This lecture showcases the **DRY principle** in agent development:
+- **Base Agent**: Same as Lecture 01's financial assistant (web search + general financial knowledge)
+- **Additional Tool**: `stock_report` tool that wraps the Lecture 02 agent
+- **Tool Composition**: Demonstrates how to compose agents by wrapping them as tools
 
 ### Features
 
-- **Multi-Agent Coordination**: StockRecommender delegates stock analysis to StockAnalysisAgent
-- **Shared Tools**: Common web search functionality moved to shared utilities
-- **Agent-as-Tool Pattern**: StockAnalysisAgent is wrapped as a tool for delegation
-- **Comparative Analysis**: Analyzes multiple stocks and provides recommendations
-- **Structured Workflow**: Search → Analyze → Compare → Recommend
+- **Extends Lecture 01**: Same base capabilities as the simple financial assistant
+- **Additional Stock Analysis**: Can now provide detailed stock analysis reports
+- **Tool Delegation**: The `stock_report` tool internally uses the Lecture 02 agent
+- **Unified Interface**: Users get both general financial advice and detailed stock analysis in one place
+- **Interactive & Demo Modes**: Both interactive sessions and pre-built example questions
 
 ### Usage
 
 ```bash
-# Run the agent delegation demo
+# Run interactive mode - ask your own questions
 uv run lecture03
 
-# The agent will:
-# 1. Search for trending/up-and-coming stocks
-# 2. Select 3 interesting candidates
-# 3. Get detailed reports for each using StockAnalysisAgent
-# 4. Compare and provide recommendations
+# Run demo mode with example questions showing both general and stock-specific queries
+uv run lecture03 --demo
+
+# Alternative: run as module
+uv run python -m lecture03.main
+uv run python -m lecture03.main --demo
 ```
+
+### Example Questions
+
+The demo mode showcases the enhanced capabilities:
+- "What is the current price of Bitcoin?" - General web search
+- "Can you give me a detailed analysis of Apple stock (AAPL)?" - Uses stock_report tool
+- "Should I invest in index funds or individual stocks?" - General financial advice
+- "Give me a comprehensive report on Tesla (TSLA)" - Uses stock_report tool
 
 ### What You'll See
 
 When you run the demo, you'll observe:
 
-1. **Primary Agent Initialization**: StockRecommender sets up with delegation tools
-2. **Web Search Phase**: Searching for trending stocks and market opportunities
-3. **Stock Selection**: Agent reasoning about which 3 stocks to analyze
-4. **Delegation in Action**: Multiple calls to StockAnalysisAgent for detailed reports
-5. **Comparative Analysis**: Agent comparing the three stock reports
-6. **Final Recommendations**: Structured recommendations for each stock
+1. **Enhanced Agent**: Same interface as Lecture 01 but with additional capabilities
+2. **Tool Selection**: The agent intelligently chooses between web_search and stock_report
+3. **Detailed Analysis**: When asked about specific stocks, it delegates to the Lecture 02 agent
+4. **General Questions**: Regular financial questions still use web search
+5. **Seamless Integration**: Both capabilities work together naturally
 
 ### Key Components
 
-- **`StockRecommender`**: Primary agent that orchestrates the workflow
-- **`get_stock_report` tool**: Wraps StockAnalysisAgent as a callable tool
-- **Shared `web_search` tool**: Moved to common utilities for reuse
-- **Agent Delegation Pattern**: Demonstrates how agents can call other agents as tools
-
-1. **Agent Initialization**: The agent sets up with the configured model and tools
-2. **Search Process**: Multiple web searches being executed to gather information
-3. **Thought Process**: The agent's reasoning as it analyzes the gathered data
-4. **Tool Execution**: Web search tool calls and their results (visible in Logfire traces)
-5. **Final Report**: A comprehensive, structured stock analysis report
-
-### Architecture
-
-The single agent:
-- Uses a comprehensive system prompt that guides the analysis process
-- Has access to the Tavily web search tool for gathering real-time information
-- Follows a structured analysis framework covering all aspects of stock analysis
-- Returns results in a validated Pydantic model format
-- Uses LiteLLM for model access with custom configuration
-
-### Key Components
-
-- **`StockAnalysisAgent`**: Main agent class that orchestrates the analysis
-- **`tavily_search_tool`**: Web search tool for gathering information
-- **`StockReport`**: Pydantic model defining the output structure
-- **Logfire Integration**: Observability for monitoring agent behavior
+- **`enhanced_financial_agent`**: Lecture 01 agent + stock_report tool
+- **`stock_report_tool`**: Wraps the Lecture 02 `analyze_stock` function
+- **`ask_financial_question`**: Same interface as Lecture 01
+- **Tool Composition Pattern**: Demonstrates how to enhance agents by adding specialized tools
 
 ## Environment Variables
 
@@ -282,10 +268,10 @@ ENABLE_LOGFIRE=true
 
 ## Future Lectures
 
-This project will be extended with additional lectures covering:
+This project can be extended with additional lectures covering:
 
-- **Lecture 03**: Agent communication patterns and coordination
-- **Lecture 04**: Advanced workflows and error handling
-- **Lecture 05**: Performance optimization and scaling
+- **Lecture 04**: Advanced agent communication patterns and coordination
+- **Lecture 05**: Complex workflows and error handling
+- **Lecture 06**: Performance optimization and scaling
 
-Each lecture will build upon the previous ones, demonstrating increasingly sophisticated agent architectures and communication patterns.
+Each lecture builds upon the previous ones, demonstrating increasingly sophisticated agent architectures and communication patterns.

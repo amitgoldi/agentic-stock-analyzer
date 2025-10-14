@@ -8,7 +8,12 @@ to answer financial questions with simple text input/output.
 import asyncio
 import sys
 
-from common.utils import print_section_header, print_subsection_header, setup_logging
+from common.utils import (
+    print_section_header,
+    print_subsection_header,
+    setup_logfire,
+    setup_logging,
+)
 from lecture01.agent import ask_financial_question, get_agent_info
 
 
@@ -99,6 +104,14 @@ def run_example_questions():
 def main():
     """Main entry point."""
     setup_logging()
+
+    # Set up Logfire instrumentation
+    setup_logfire(
+        service_name="financial-assistant-lecture01",
+        start_message="🚀 Tikal Lecture 01 - Financial Assistant Agent Started",
+        extra_data={"mode": "interactive" if len(sys.argv) == 1 else "demo"},
+    )
+
     print("Lecture 01: Simple Financial Assistant Agent\n")
 
     if len(sys.argv) > 1 and sys.argv[1] == "--demo":

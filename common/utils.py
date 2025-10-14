@@ -140,6 +140,7 @@ def setup_logfire(
             environment="development",
             service_name=service_name,
             inspect_arguments=False,  # Suppress warnings in demo environment
+            console=False,  # Disable console output to avoid cluttering CLI during demos
         )
 
         # Instrument Pydantic AI
@@ -151,10 +152,10 @@ def setup_logfire(
         # Send a test message to verify connection
         logfire.info(start_message, extra=extra_data or {})
 
-        logger.info("Logfire instrumentation configured successfully")
-        logger.info(f"Logfire project: {config.LOGFIRE_PROJECT_ID}")
-        logger.info(f"Logfire token configured: {config.LOGFIRE_API_KEY[:20]}...")
-        logger.info("✅ Check your Logfire dashboard for traces!")
+        logger.debug("Logfire instrumentation configured successfully")
+        logger.debug(f"Logfire project: {config.LOGFIRE_PROJECT_ID}")
+        logger.debug(f"Logfire token configured: {config.LOGFIRE_API_KEY[:20]}...")
+        logger.debug("✅ Check your Logfire dashboard for traces!")
 
     except Exception as e:
         logger.warning(f"Failed to configure Logfire: {e}")

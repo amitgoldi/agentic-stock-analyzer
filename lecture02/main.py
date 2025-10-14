@@ -23,7 +23,7 @@ from common.utils import (
     setup_logfire,
     setup_logging,
 )
-from lecture02.agent import StockAnalysisAgent
+from lecture02.agent import analyze_stock
 
 logger = logging.getLogger(__name__)
 
@@ -84,15 +84,12 @@ async def analyze_stock_async(symbol: str) -> None:
         print(f"Max Results: {config.TAVILY_MAX_RESULTS}")
         print(f"Search Depth: {config.TAVILY_SEARCH_DEPTH}")
 
-        # Create the agent
-        agent = StockAnalysisAgent()
-
         print_section_header("STARTING ANALYSIS")
         print(f"Analyzing stock: {symbol}")
         print("This may take a few moments as the agent searches for information...")
 
         # Analyze the stock
-        report = await agent.analyze_stock(symbol)
+        report = await analyze_stock(symbol)
 
         # Print the results
         print_report(report, symbol)

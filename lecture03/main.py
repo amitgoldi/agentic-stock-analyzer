@@ -1,151 +1,143 @@
 """
-Lecture 03: Agent Delegation Pattern
+Main runner for Lecture 03: Enhanced Financial Assistant Agent
 
-This module demonstrates the Agent Delegation communication pattern where
-a primary agent (StockRecommender) delegates specific tasks to specialized
-agents (StockAnalysisAgent) through tool calls.
+This script demonstrates the lecture01 Financial Assistant enhanced with an
+additional stock_report tool that internally delegates to the lecture02 agent.
 
-Usage:
-    python -m lecture03.main
-
-The agent will automatically:
-1. Search for trending/up-and-coming stocks
-2. Select 3 interesting candidates
-3. Get detailed reports for each using StockAnalysisAgent
-4. Compare and provide recommendations
+This shows how to extend a basic agent with specialized capabilities by simply
+adding new tools without modifying the core agent structure.
 """
 
 import asyncio
-import logging
 import sys
 
-from common.config import config
 from common.utils import (
     print_section_header,
     print_subsection_header,
     setup_logfire,
     setup_logging,
 )
-from lecture03.agent import StockRecommender
-
-logger = logging.getLogger(__name__)
+from lecture03.agent import ask_financial_question, get_agent_info
 
 
-def print_recommendation_report(report) -> None:
-    """Print the stock recommendation report in a formatted way."""
-    print_section_header("STOCK RECOMMENDATION REPORT")
+def display_welcome():
+    """Display welcome message and agent information."""
+    agent_info = get_agent_info()
 
-    print(f"Analysis Date: {report.analysis_date}")
-    print()
+    print_section_header("Lecture 03: Enhanced Financial Assistant")
+    print("🏦 Enhanced Financial Assistant Agent\n")
+    print(f"Description: {agent_info['description']}\n")
 
-    print_subsection_header("MARKET OVERVIEW")
-    print(report.market_overview)
-    print()
+    print("Capabilities:")
+    for capability in agent_info["capabilities"]:
+        print(f"  • {capability}")
 
-    print_subsection_header("SELECTION CRITERIA")
-    print(report.selection_criteria)
-    print()
+    print("\nEnhancements over Lecture 01:")
+    for enhancement in agent_info["enhancements"]:
+        print(f"  • {enhancement}")
 
-    # Print each recommendation
-    for i, rec in enumerate(report.recommendations, 1):
-        print_subsection_header(f"RECOMMENDATION #{i}: {rec.symbol}")
-        print(f"Company: {rec.company_name}")
-        print(f"Symbol: {rec.symbol}")
-        print(f"Recommendation: {rec.recommendation_type}")
-        print(f"Confidence Level: {rec.confidence_level}")
-        print(f"Time Horizon: {rec.time_horizon}")
+    print("\nLimitations:")
+    for limitation in agent_info["limitations"]:
+        print(f"  • {limitation}")
 
-        if rec.potential_upside:
-            print(f"Potential Upside: {rec.potential_upside}")
-
-        if rec.key_reasons:
-            print("\nKey Reasons:")
-            for j, reason in enumerate(rec.key_reasons, 1):
-                print(f"  {j}. {reason}")
-
-        if rec.main_risks:
-            print("\nMain Risks:")
-            for j, risk in enumerate(rec.main_risks, 1):
-                print(f"  {j}. {risk}")
-
-        print()
-
-    print_subsection_header("COMPARATIVE ANALYSIS")
-    print(report.comparative_analysis)
-    print()
-
-    print_subsection_header("MARKET OUTLOOK")
-    print(report.market_outlook)
-    print()
-
-    print_subsection_header("DISCLAIMER")
-    print(report.disclaimer)
+    print("\nType 'quit' or 'exit' to end the session.")
 
 
-async def get_recommendations_async() -> None:
-    """Get stock recommendations asynchronously."""
-    try:
-        print_section_header("INITIALIZING STOCK RECOMMENDER AGENT")
-        print(f"Model: {config.AGENT_MODEL}")
-        print(f"Temperature: {config.AGENT_TEMPERATURE}")
-        print(f"Max Results: {config.TAVILY_MAX_RESULTS}")
-        print(f"Search Depth: {config.TAVILY_SEARCH_DEPTH}")
-        print()
-        print("Agent Delegation Pattern:")
-        print("- Primary Agent: StockRecommender (orchestrates workflow)")
-        print("- Specialized Agent: StockAnalysisAgent (provides detailed analysis)")
-        print("- Communication: Tool-based delegation")
+async def handle_question(question: str) -> None:
+    """Handle a user question and display the response."""
+    print(f"\nQuestion: {question}")
 
-        # Create the agent
-        agent = StockRecommender()
+    # Show thinking indicator
+    print("Thinking and searching for information...")
+    response = await ask_financial_question(question)
 
-        print_section_header("STARTING RECOMMENDATION PROCESS")
-        print("The agent will:")
-        print("1. Search for trending/up-and-coming stocks")
-        print("2. Select 3 interesting candidates")
-        print("3. Delegate detailed analysis to StockAnalysisAgent for each")
-        print("4. Compare results and provide recommendations")
-        print()
-        print("This may take several minutes as the agent performs multiple searches")
-        print("and delegates analysis to the specialized agent...")
-
-        # Get recommendations
-        report = await agent.get_recommendations()
-
-        # Print the results
-        print_recommendation_report(report)
-
-    except Exception as e:
-        logger.error(f"Recommendation process failed: {e}")
-        print(f"\nERROR: Recommendation process failed - {e}")
-        sys.exit(1)
+    # Display the response
+    print_subsection_header("💡 Enhanced Financial Assistant Response")
+    print(response)
 
 
-def main() -> None:
+async def interactive_session():
+    """Run an interactive session with the enhanced financial assistant."""
+    display_welcome()
+
+    while True:
+        try:
+            # Get user input
+            question = input("\nAsk a financial question: ").strip()
+
+            # Check for exit commands
+            if question.lower() in ["quit", "exit", "q"]:
+                print("\nThank you for using the Enhanced Financial Assistant! 👋")
+                break
+
+            # Handle empty input
+            if not question:
+                print("Please enter a question or 'quit' to exit.")
+                continue
+
+            # Process the question
+            await handle_question(question)
+
+        except KeyboardInterrupt:
+            print("\n\nSession ended. Goodbye! 👋")
+            break
+        except Exception as e:
+            print(f"Error: {str(e)}")
+
+
+def run_example_questions():
+    """Run some example questions to demonstrate the enhanced agent."""
+    print_section_header("Demo Mode")
+    print("Running example questions to demonstrate the Enhanced Financial Assistant")
+    print(
+        "Notice how it can handle both general questions AND detailed stock analysis!\n"
+    )
+
+    example_questions = [
+        "What is the current price of Bitcoin?",
+        "Can you give me a detailed analysis of Apple stock (AAPL)?",
+        "Should I invest in index funds or individual stocks?",
+        "Give me a comprehensive report on Tesla (TSLA)",
+    ]
+
+    async def run_examples():
+        for i, question in enumerate(example_questions, 1):
+            print(f"\nExample {i}:")
+            await handle_question(question)
+
+            # Add a small delay between questions
+            await asyncio.sleep(1)
+
+    asyncio.run(run_examples())
+
+
+def main():
     """Main entry point."""
-    # Set up logging
     setup_logging()
 
     # Set up Logfire instrumentation
     setup_logfire(
-        service_name="stock-analysis-lecture03",
-        start_message="🚀 Tikal Lecture 03 - Agent Delegation Pattern Started",
-        extra_data={"pattern": "delegation"},
+        service_name="enhanced-financial-assistant-lecture03",
+        start_message="🚀 Tikal Lecture 03 - Enhanced Financial Assistant Started",
+        extra_data={
+            "mode": "interactive" if len(sys.argv) == 1 else "demo",
+            "enhancement": "stock_report_tool from lecture02",
+        },
     )
 
-    print_section_header("TIKAL LECTURE 03: AGENT DELEGATION PATTERN")
-    print("This demo shows the Agent Delegation communication pattern where")
-    print("a primary agent delegates specific tasks to specialized agents.")
-    print()
-    print("Architecture:")
-    print("- StockRecommender: Primary agent that orchestrates the workflow")
-    print("- StockAnalysisAgent: Specialized agent for detailed stock analysis")
-    print(
-        "- Communication: The primary agent calls the specialized agent through tools"
-    )
+    print_section_header("Lecture 03: Enhanced Financial Assistant Agent")
+    print("This is the lecture01 agent enhanced with the stock_report tool")
+    print("The stock_report tool internally uses the lecture02 agent for analysis\n")
 
-    # Run the recommendation process asynchronously using asyncio
-    asyncio.run(get_recommendations_async())
+    if len(sys.argv) > 1 and sys.argv[1] == "--demo":
+        # Run demo mode with example questions
+        run_example_questions()
+    else:
+        # Run interactive mode
+        try:
+            asyncio.run(interactive_session())
+        except KeyboardInterrupt:
+            print("\nGoodbye! 👋")
 
 
 if __name__ == "__main__":

@@ -56,9 +56,9 @@ demo-lecture02: ## Run lecture02 demo with AAPL
 	@echo "🚀 Running Lecture 02 demo..."
 	uv run lecture02 AAPL
 
-demo-lecture03: ## Run lecture03 demo
+demo-lecture03: ## Run lecture03 demo (enhanced financial assistant)
 	@echo "🚀 Running Lecture 03 demo..."
-	uv run lecture03
+	uv run lecture03 --demo
 
 # Development workflow
 dev: setup ## Set up development environment and run checks
