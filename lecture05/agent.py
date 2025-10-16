@@ -206,23 +206,44 @@ The analysis date should be: {get_current_date()}
                                         if part.get("kind") == "data":
                                             # Found structured data response
                                             data = part.get("data", {})
-                                            # A2A wraps structured data
-                                            if isinstance(data, dict):
+                                            # A2A wraps structured data in {"result": {...}}
+                                            if (
+                                                isinstance(data, dict)
+                                                and "result" in data
+                                            ):
+                                                stock_data = data["result"]
                                                 logger.info(
-                                                    f"A2A Protocol: Successfully extracted StockReport for {normalized_symbol}"
+                                                    f"A2A Protocol: Successfully extracted StockReport from history for {normalized_symbol}"
+                                                )
+                                                return StockReport(**stock_data)
+                                            elif isinstance(data, dict):
+                                                # Try direct data if no "result" wrapper
+                                                logger.info(
+                                                    f"A2A Protocol: Successfully extracted StockReport from history (direct) for {normalized_symbol}"
                                                 )
                                                 return StockReport(**data)
 
-                        # If we didn't find structured data, check artifacts
+                        # If we didn't find structured data in history, check artifacts
                         artifacts = task.get("artifacts", [])
                         for artifact in artifacts:
-                            if artifact.get("kind") == "data":
-                                data = artifact.get("data", {})
-                                if isinstance(data, dict):
-                                    logger.info(
-                                        f"A2A Protocol: Successfully extracted StockReport from artifacts for {normalized_symbol}"
-                                    )
-                                    return StockReport(**data)
+                            # Check parts within artifact
+                            parts = artifact.get("parts", [])
+                            for part in parts:
+                                if part.get("kind") == "data":
+                                    data = part.get("data", {})
+                                    # A2A wraps structured output in {"result": {...}}
+                                    if isinstance(data, dict) and "result" in data:
+                                        stock_data = data["result"]
+                                        logger.info(
+                                            f"A2A Protocol: Successfully extracted StockReport from artifacts for {normalized_symbol}"
+                                        )
+                                        return StockReport(**stock_data)
+                                    elif isinstance(data, dict):
+                                        # Try direct data if no "result" wrapper
+                                        logger.info(
+                                            f"A2A Protocol: Successfully extracted StockReport from artifacts (direct) for {normalized_symbol}"
+                                        )
+                                        return StockReport(**data)
 
                         raise RuntimeError(
                             "Task completed but no StockReport found in response"
