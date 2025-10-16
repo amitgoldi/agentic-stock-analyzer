@@ -68,8 +68,11 @@ Remember: Your analysis should be thorough, factual, and useful for investment d
 
 # Expose the agent as an A2A server
 # This creates an ASGI application that implements the A2A protocol
-app = stock_analysis_agent.to_a2a()
-
-logger.info("Stock Analysis A2A Server initialized")
-logger.info("Server can be accessed at http://localhost:8001")
-logger.info("Use uvicorn lecture05.stock_a2a_server:app --host 0.0.0.0 --port 8001")
+try:
+    app = stock_analysis_agent.to_a2a()
+    logger.info("Stock Analysis A2A Server initialized successfully")
+    logger.info("Server can be accessed at http://localhost:8001")
+    logger.info("Use uvicorn lecture05.stock_a2a_server:app --host 0.0.0.0 --port 8001")
+except Exception as e:
+    logger.error(f"Failed to initialize A2A server: {e}")
+    raise

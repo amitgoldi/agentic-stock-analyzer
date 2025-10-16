@@ -14,6 +14,7 @@ through HTTP requests following the A2A protocol specification.
 Reference: https://ai.pydantic.dev/a2a/
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -93,25 +94,35 @@ Please analyze the stock {normalized_symbol} and provide a comprehensive report.
 The analysis date should be: {get_current_date()}
         """.strip()
 
-        # A2A protocol message format
+        # Generate unique IDs for the request
+        import uuid
+
+        message_id = str(uuid.uuid4())
+        request_id = str(uuid.uuid4())
+
+        # A2A protocol uses JSON-RPC 2.0 format
         a2a_request = {
-            "messages": [
-                {
+            "jsonrpc": "2.0",
+            "method": "message/send",
+            "params": {
+                "message": {
                     "role": "user",
-                    "parts": [{"type": "text", "content": analysis_prompt}],
-                }
-            ]
+                    "parts": [{"kind": "text", "text": analysis_prompt}],
+                    "kind": "message",
+                    "messageId": message_id,
+                },
+                "configuration": {"acceptedOutputModes": ["application/json"]},
+            },
+            "id": request_id,
         }
 
-        logger.info(
-            f"A2A Protocol: Sending HTTP request to {A2A_STOCK_SERVER_URL}/tasks"
-        )
+        logger.info(f"A2A Protocol: Sending HTTP request to {A2A_STOCK_SERVER_URL}/")
 
         try:
             # Send request to A2A server
             async with httpx.AsyncClient(timeout=120.0) as client:
                 response = await client.post(
-                    f"{A2A_STOCK_SERVER_URL}/tasks",
+                    f"{A2A_STOCK_SERVER_URL}/",
                     json=a2a_request,
                 )
 
@@ -124,35 +135,111 @@ The analysis date should be: {get_current_date()}
                         f"Error: {error_msg}"
                     )
 
-                a2a_response = response.json()
+                json_rpc_response = response.json()
+
+                # Check for JSON-RPC error
+                if "error" in json_rpc_response:
+                    error = json_rpc_response["error"]
+                    error_msg = (
+                        f"A2A RPC error: {error.get('message', 'Unknown error')}"
+                    )
+                    logger.error(error_msg)
+                    raise RuntimeError(error_msg)
+
+                # Get the task result
+                task_result = json_rpc_response.get("result", {})
+                task_id = task_result.get("id")
 
                 logger.info(
-                    f"A2A Protocol: Received response with task_id {a2a_response.get('task_id')}"
+                    f"A2A Protocol: Task created with ID {task_id}, polling for completion..."
                 )
 
-                # Extract StockReport from A2A artifacts
-                artifacts = a2a_response.get("artifacts", [])
-                if not artifacts:
-                    raise RuntimeError("No artifacts received from A2A server")
+                # Poll for task completion
+                max_attempts = 60  # 60 seconds max
+                for attempt in range(max_attempts):
+                    await asyncio.sleep(1)
 
-                # The StockReport should be in the first data artifact
-                for artifact in artifacts:
-                    if artifact.get("type") == "data":
-                        data_content = artifact.get("data", {})
-                        # A2A wraps structured data in {"result": <data>}
-                        if "result" in data_content:
-                            stock_data = data_content["result"]
-                        else:
-                            stock_data = data_content
+                    # Get task status
+                    task_status_request = {
+                        "jsonrpc": "2.0",
+                        "method": "tasks/get",
+                        "params": {"id": task_id},
+                        "id": str(uuid.uuid4()),
+                    }
 
-                        logger.info(
-                            f"A2A Protocol: Successfully extracted StockReport for {normalized_symbol}"
+                    status_response = await client.post(
+                        f"{A2A_STOCK_SERVER_URL}/", json=task_status_request
+                    )
+
+                    if status_response.status_code != 200:
+                        logger.warning(
+                            f"Failed to get task status: {status_response.status_code}"
+                        )
+                        continue
+
+                    status_data = status_response.json()
+                    if "error" in status_data:
+                        raise RuntimeError(
+                            f"Task status error: {status_data['error'].get('message')}"
                         )
 
-                        # Parse the data into StockReport
-                        return StockReport(**stock_data)
+                    task = status_data.get("result", {})
+                    task_state = task.get("status", {}).get("state")
 
-                raise RuntimeError("No valid StockReport found in A2A response")
+                    logger.debug(
+                        f"A2A Protocol: Task {task_id} state: {task_state} (attempt {attempt + 1}/{max_attempts})"
+                    )
+
+                    if task_state == "completed":
+                        logger.info(
+                            f"A2A Protocol: Task {task_id} completed successfully"
+                        )
+
+                        # Extract the agent's response from the history
+                        history = task.get("history", [])
+                        if history:
+                            # Find the last agent message
+                            for msg in reversed(history):
+                                if msg.get("role") == "agent":
+                                    parts = msg.get("parts", [])
+                                    for part in parts:
+                                        if part.get("kind") == "data":
+                                            # Found structured data response
+                                            data = part.get("data", {})
+                                            # A2A wraps structured data
+                                            if isinstance(data, dict):
+                                                logger.info(
+                                                    f"A2A Protocol: Successfully extracted StockReport for {normalized_symbol}"
+                                                )
+                                                return StockReport(**data)
+
+                        # If we didn't find structured data, check artifacts
+                        artifacts = task.get("artifacts", [])
+                        for artifact in artifacts:
+                            if artifact.get("kind") == "data":
+                                data = artifact.get("data", {})
+                                if isinstance(data, dict):
+                                    logger.info(
+                                        f"A2A Protocol: Successfully extracted StockReport from artifacts for {normalized_symbol}"
+                                    )
+                                    return StockReport(**data)
+
+                        raise RuntimeError(
+                            "Task completed but no StockReport found in response"
+                        )
+
+                    elif task_state == "failed":
+                        error_msg = task.get("status", {}).get("error", "Unknown error")
+                        raise RuntimeError(f"Task failed: {error_msg}")
+
+                    elif task_state == "canceled":
+                        raise RuntimeError("Task was canceled")
+
+                    # Still in progress, continue polling
+
+                raise RuntimeError(
+                    f"Task did not complete within {max_attempts} seconds"
+                )
 
         except httpx.ConnectError:
             error_msg = (
