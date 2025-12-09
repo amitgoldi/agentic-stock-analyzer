@@ -2,6 +2,15 @@
 
 This is a demo project for progressive live coding demonstrations showing different approaches to building AI agents for stock analysis.
 
+## 📓 Jupyter Notebooks (Recommended)
+
+Each lecture is available as an interactive Jupyter notebook for easy learning and experimentation. See **[NOTEBOOKS.md](NOTEBOOKS.md)** for setup instructions.
+
+Quick start:
+```bash
+uv run jupyter notebook  # Then open lecture01.ipynb, lecture02.ipynb, etc.
+```
+
 ## Project Structure
 
 ```
@@ -89,6 +98,13 @@ Pre-commit hooks are automatically installed with `make setup` and will run:
 
 ### Demo Commands
 
+**Option A: Jupyter Notebooks** (Recommended for learning)
+```bash
+uv run jupyter notebook  # Open lecture01.ipynb, lecture02.ipynb, etc.
+```
+See [NOTEBOOKS.md](NOTEBOOKS.md) for detailed instructions.
+
+**Option B: CLI Demos** (Original format)
 ```bash
 make demo-lecture01  # Run lecture01 demo (simple financial assistant)
 make demo-lecture02  # Run lecture02 demo with AAPL
