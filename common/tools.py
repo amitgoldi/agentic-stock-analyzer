@@ -20,7 +20,9 @@ def create_web_search_tool() -> Tool:
     if not config.TAVILY_API_KEY:
         raise ValueError("TAVILY_API_KEY is required for web search functionality")
 
-    return tavily_search_tool(config.TAVILY_API_KEY)
+    tool = tavily_search_tool(config.TAVILY_API_KEY)
+    tool.name = "web_search"
+    return tool
 
 
 # Create a shared instance of the web search tool
