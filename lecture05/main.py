@@ -68,7 +68,7 @@ def check_server_startup():
     print("\n  Terminal 1 (this terminal):")
     print("    # Will run the financial assistant demo")
     print("\n  Terminal 2 (new terminal):")
-    print("    cd", "/Users/amitgol/git/tikal-lecture-communication-patterns")
+    print("    cd <project-root>")
     print("    uvicorn lecture05.stock_a2a_server:app --host 0.0.0.0 --port 8001")
     print("\nWait for the server to start, then continue with this demo.")
     print("=" * 70 + "\n")
